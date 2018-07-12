@@ -4,6 +4,7 @@ import torch
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
 from math import log
+import pandas as pd
 
 class Trainer:
     def __init__(self, dataset, num_users=2):
@@ -25,16 +26,21 @@ class Trainer:
         out = 0
         # iterate over images
         for i in range(0, labels.shape[0]):
-            temp = (labels[i][1] - 1)*(1 - self.opt['lambda'])
+            temp = (labels[i][1] - 1).type(torch.FloatTensor)*torch.Tensor(np.array(1 - self.opt['lambda']))
             temp2 = 0
             # for each user for image
             for j in range(0, self.num_classes):
                 # only if target of image is the jth user
                 if j == labels.data.cpu().numpy()[i][0]: # labels[i][0] gives target user for image i
                     temp2 += log(outputs[0][i][j]) # outputs[0][i][j] means probability for image i and user j
-            temp3 = labels[i][1]*log(outputs[1][i][0]) # outputs[1][i][0] means probability that image i is a forgery
-            temp4 = (1 - labels[i][1])*log(1-outputs[1][i][0]) # labels[i][1] gives forgery_bool for image i
+            temp3 = labels[i][1].type(torch.FloatTensor)*log(outputs[1][i][0]) # outputs[1][i][0] means probability that image i is a forgery
+            temp4 = (1 - labels[i][1]).type(torch.FloatTensor)*log(1-outputs[1][i][0]) # labels[i][1] gives forgery_bool for image i
             out += temp*temp2 - self.opt['lambda']*(temp3 + temp4)
+            # print("temp= {}".format(temp))
+            # print("temp2= {}".format(temp2))
+            # print("temp3= {}".format(temp3))
+            # print("temp4= {}".format(temp4))
+            # print()
             # out += (labels[i][1] - 1)*(1 - self.opt['lambda'])*temp2 - self.opt['lambda']*((labels[i][1]*np.log(outputs[1][i][0])) + ((1 - labels[i][1])*np.log(1-outputs[1][i][0])))
         return out
 
@@ -74,27 +80,31 @@ class Trainer:
             train_loss = 0.0
             for _, (images, labels) in enumerate(train_loader):
                 if self.cuda_avail:
-                    images, labels = Variable(images.cuda()), Variable(labels.cuda())
+                    images, labels = Variable(images.cuda(), requires_grad=True), Variable(labels.cuda(), requires_grad=True)
                 else:
-                    images, labels = Variable(images), Variable(labels)
+                    images, labels = Variable(images, requires_grad=True), Variable(labels, requires_grad=True)
 
                 self.optimizer.zero_grad()
                 outputs = self.model(images)
                 loss = self.loss(outputs, labels)
                 loss.backward()
-                optimizer.step()
+                self.optimizer.step()
 
-                train_loss += loss.cpu().data[0] * images.size(0)
-                _, prediction = torch.max(outputs.data, 1)
+                train_loss += loss.cpu().item() * images.size(0)
+                _, prediction = torch.max(outputs[0].data, 1)
 
-                train_acc += torch.sum(prediction == labels.data)
+                prediction = prediction.type(torch.IntTensor)
+                targets = torch.Tensor(pd.DataFrame(labels.data.cpu().numpy())[0].values).type(torch.IntTensor)
 
-            adjust_learning_rate(epoch)
+                train_acc += torch.sum(prediction == targets.data)
+
+            self.adjust_learning_rate(epoch)
 
             train_acc = train_acc / len(self.dataset)
             train_loss = train_loss / len(self.dataset)
 
-            test_acc = test()
+            # test_acc = test()
+            test_acc = 0
 
             if test_acc > best_acc:
                 save_models(epoch)
