@@ -2,7 +2,7 @@ import torch.nn as nn
 import torch
 
 class Signet(nn.Module):
-    def __init__(self, num_users=2):
+    def __init__(self, num_users=10):
         super(Signet, self).__init__()
         self.num_classes = num_users
 

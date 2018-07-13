@@ -7,7 +7,7 @@ from math import log
 import pandas as pd
 
 class Trainer:
-    def __init__(self, dataset, num_users=2):
+    def __init__(self, dataset, num_users=10):
         self.dataset = dataset
         self.num_classes = num_users # set in main
         self.cuda_avail = torch.cuda.is_available()
@@ -72,7 +72,6 @@ class Trainer:
         best_acc = 0.0
 
         train_loader = DataLoader(dataset=self.dataset, batch_size=self.opt['batch_size'], shuffle=True, num_workers=2)
-
         for epoch in range(num_epochs):
             self.model.train()
 
@@ -95,13 +94,15 @@ class Trainer:
 
                 prediction = prediction.type(torch.IntTensor)
                 targets = torch.Tensor(pd.DataFrame(labels.data.cpu().numpy())[0].values).type(torch.IntTensor)
-
-                train_acc += torch.sum(prediction == targets.data)
+                # print(prediction)
+                # print(targets)
+                # print(len(train_loader))
+                train_acc += torch.sum(prediction == targets)
 
             self.adjust_learning_rate(epoch)
 
-            train_acc = train_acc / len(self.dataset)
-            train_loss = train_loss / len(self.dataset)
+            train_acc = train_acc / len(train_loader.dataset)
+            train_loss = train_loss / len(train_loader.dataset)
 
             # test_acc = test()
             test_acc = 0
