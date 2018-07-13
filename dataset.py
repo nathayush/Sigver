@@ -7,8 +7,8 @@ from torch.utils.data import Dataset
 from sklearn import preprocessing
 
 class SigData(Dataset):
-    def __init__(self):
-        df = pd.read_csv("data/dataset.csv")
+    def __init__(self, path):
+        df = pd.read_csv(path)
         self.len = len(df)
 
         # convert string names to ints
@@ -21,7 +21,8 @@ class SigData(Dataset):
         for index, row in df.iterrows():
             img = self.process_img(row['image'])
             x_data.append(img)
-            y_data.append((row["target_encoded"], row["forgery"]))
+            # y_data.append((row["target_encoded"], row["forgery"]))
+            y_data.append(row["target_encoded"])
         self.x_data = torch.from_numpy(np.asarray(x_data)) # 220 x 150 tensors of images
         self.y_data = torch.from_numpy(np.asarray(y_data)) # 1-d 2-tensors of target_user, forgery_bool
 
