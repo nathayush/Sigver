@@ -4,30 +4,28 @@ import cv2
 import torch
 from scipy import ndimage
 from torch.utils.data import Dataset
-from sklearn import preprocessing
 
 class SigData(Dataset):
-    def __init__(self, path):
+    def __init__(self, path, name_encoder):
         df = pd.read_csv(path)
         self.len = len(df)
 
         # convert string names to ints
-        name_encoder = preprocessing.LabelEncoder()
-        name_encoder.fit(df['target'])
-        df['target_encoded'] = name_encoder.transform(df['target'])
-
+        name_encoder.fit(df['target'].values)
+        df2 = name_encoder.transform(df['target'])
         x_data = []
         y_data = []
+        z_data = []
         for index, row in df.iterrows():
-            img = self.process_img(row['image'])
-            x_data.append(img)
-            # y_data.append((row["target_encoded"], row["forgery"]))
-            y_data.append(row["target_encoded"])
+            x_data.append(self.process_img(row['image']))
+            y_data.append(df2[index])
+            z_data.append(row["forgery"])
         self.x_data = torch.from_numpy(np.asarray(x_data)) # 220 x 150 tensors of images
         self.y_data = torch.from_numpy(np.asarray(y_data)) # 1-d 2-tensors of target_user, forgery_bool
+        self.z_data = torch.from_numpy(np.asarray(z_data))
 
     def __getitem__(self, index):
-        return self.x_data[index], self.y_data[index]
+        return self.x_data[index], self.y_data[index], self.z_data[index]
 
     def __len__(self):
         return self.len

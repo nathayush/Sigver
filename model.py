@@ -41,8 +41,8 @@ class Signet(nn.Module):
         self.fc_m = nn.Linear(in_features=2048, out_features=self.num_classes)
         self.act_m = nn.Softmax(1)
         # probability that image is a forgery
-        # self.fc_f = nn.Linear(in_features=2048, out_features=1)
-        # self.act_f = nn.Sigmoid()
+        self.fc_f = nn.Linear(in_features=2048, out_features=1)
+        self.act_f = nn.Sigmoid()
 
     def forward(self, x):
         x = x.type(torch.FloatTensor)
@@ -64,8 +64,7 @@ class Signet(nn.Module):
         x = self.act7(self.norm7(self.fc7(x)))
 
         m = self.act_m(self.fc_m(x))
-        # f = self.act_f(self.fc_f(x))
+        f = self.act_f(self.fc_f(x))
 
         # tuple of tensors
-        # return(m,f)
-        return m
+        return m, f
