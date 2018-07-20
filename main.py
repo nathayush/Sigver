@@ -4,10 +4,9 @@ from sklearn import svm
 
 
 def main():
+    ### PHASE 1 ###
+
     num_classes = 21
-
-    ### PHASE 1
-
     name_encoder = preprocessing.LabelBinarizer()
 
     shuffler.shuffleData() # shuffle dataset
@@ -20,7 +19,9 @@ def main():
 
     exit()
 
-    ### PHASE 2
+    # Load checkpoint as trained weights for CNN
+
+    ### PHASE 2 ###
 
     # new_dataset for a user
     # features = mytrainer.model.get_feature_vectors(new_dataset)

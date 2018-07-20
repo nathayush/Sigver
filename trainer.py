@@ -21,13 +21,6 @@ class Trainer:
 
         self.create_model()
 
-        if os.path.isdir("checkpoints"):
-            shutil.rmtree("checkpoints")
-            os.makedirs("checkpoints")
-        else:
-            os.makedirs("checkpoints")
-
-
     def loss(self, label_pred, forg_pred, labels, forgeries):
         out = 0.0
         for i in range(0, forgeries.shape[0]):
@@ -47,6 +40,12 @@ class Trainer:
             self.model.cuda()
 
         self.optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, self.model.parameters()), lr=1e-3, momentum=0.9, weight_decay=1e-4, nesterov=True)
+
+        if os.path.isdir("checkpoints"):
+            shutil.rmtree("checkpoints")
+            os.makedirs("checkpoints")
+        else:
+            os.makedirs("checkpoints")
 
     def save_models(self, epoch):
         torch.save(self.model.state_dict(), "checkpoints/Signet_{}.model".format(epoch))
@@ -139,6 +138,7 @@ class Trainer:
             test_loss += loss.cpu().item() * images.size(0)
             _, prediction = torch.max(label_pred.data, 1)
 
+            #user acc
             prediction = prediction.type(torch.IntTensor)
             targets = torch.from_numpy(np.asarray([np.where(r==1)[0][0] for r in labels])).type(torch.IntTensor)
             test_acc += torch.sum(prediction == targets).cpu().item()
