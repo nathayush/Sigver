@@ -45,10 +45,11 @@ class Signet(nn.Module):
         self.fc_f = nn.Linear(in_features=2048, out_features=1)
         self.act_f = nn.Sigmoid()
 
+        # grouping layers for a simpler forward method
         self.features1, self.features2 = nn.Sequential(*list(self.children())[:-10]), nn.Sequential(*list(self.children())[18:-4])
 
     def forward(self, x):
-        x = x.type(torch.FloatTensor)
+        # x = x.type(torch.FloatTensor)
         x = x.unsqueeze_(1)
 
         x = self.features1(x)

@@ -8,7 +8,7 @@ import pandas as pd
 import os, shutil
 
 class Trainer:
-    def __init__(self, trainData, testData, num_users=10):
+    def __init__(self, trainData, testData, num_users):
         self.trainData = trainData
         self.testData = testData
         self.num_classes = num_users # set in main
@@ -21,14 +21,7 @@ class Trainer:
 
         self.create_model()
 
-        if os.path.isdir("checkpoints"):
-            shutil.rmtree("checkpoints")
-            os.makedirs("checkpoints")
-        else:
-            os.makedirs("checkpoints")
-
-
-    def loss(self, label_pred, forg_pred, labels, forgeries):
+    def custom_loss(self, label_pred, forg_pred, labels, forgeries):
         out = 0.0
         for i in range(0, forgeries.shape[0]):
             temp = (forgeries[i] - 1)*(1 - self.opt['lambda'])
@@ -47,6 +40,14 @@ class Trainer:
             self.model.cuda()
 
         self.optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, self.model.parameters()), lr=1e-3, momentum=0.9, weight_decay=1e-4, nesterov=True)
+        self.loss_fn = torch.nn.CrossEntropyLoss()
+
+    def clear_model_checkpoints(self):
+            if os.path.isdir("checkpoints"):
+                shutil.rmtree("checkpoints")
+                os.makedirs("checkpoints")
+            else:
+                os.makedirs("checkpoints")
 
     def save_models(self, epoch):
         torch.save(self.model.state_dict(), "checkpoints/Signet_{}.model".format(epoch))
@@ -82,12 +83,14 @@ class Trainer:
                 else:
                     images, labels, forgeries = Variable(images, requires_grad=True), Variable(labels, requires_grad=True), Variable(forgeries, requires_grad=True)
 
-                labels = labels.type(torch.FloatTensor)
-                forgeries = forgeries.type(torch.FloatTensor)
-
                 self.optimizer.zero_grad()
                 label_pred, forg_pred = self.model(images)
-                loss = self.loss(label_pred, forg_pred, labels, forgeries)
+                print(label_pred)
+                print(forg_pred)
+                print(labels)
+                print(forgeries)
+                # loss = self.custom_loss(label_pred, forg_pred, labels, forgeries)
+                loss = self.loss_fn(label_pred, labels)
 
                 loss.backward()
                 self.optimizer.step()
@@ -135,10 +138,11 @@ class Trainer:
                 images, labels, forgeries = Variable(images), Variable(labels), Variable(forgeries)
 
             label_pred, forg_pred = self.model(images)
-            loss = self.loss(label_pred, forg_pred, labels, forgeries)
+            loss = self.customloss(label_pred, forg_pred, labels, forgeries)
             test_loss += loss.cpu().item() * images.size(0)
             _, prediction = torch.max(label_pred.data, 1)
 
+            #user acc
             prediction = prediction.type(torch.IntTensor)
             targets = torch.from_numpy(np.asarray([np.where(r==1)[0][0] for r in labels])).type(torch.IntTensor)
             test_acc += torch.sum(prediction == targets).cpu().item()

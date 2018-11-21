@@ -1,26 +1,30 @@
-import trainer, dataset, shuffler
+import trainer, dataset
 from sklearn import preprocessing
 from sklearn import svm
 
 
 def main():
+    ### PHASE 1 ###
+
     num_classes = 21
 
-    ### PHASE 1
+    trainData = dataset.CNNData("data/cnn/train")
+    print("created training set.")
+    testData = dataset.CNNData("data/cnn/test")
+    print("created test set.")
 
-    name_encoder = preprocessing.LabelBinarizer()
+    mytrainer = trainer.Trainer(trainData, testData, num_users=49) # number of people in the training set
 
-    shuffler.shuffleData() # shuffle dataset
-    trainData = dataset.SigData("data/train_data.csv", name_encoder)
-    testData = dataset.SigData("data/test_data.csv", name_encoder)
-    print("created datasets.")
-    mytrainer = trainer.Trainer(trainData, testData, num_users=num_classes) # number of people in the training set
+    mytrainer.clear_model_checkpoints()
+
     print("training.")
     mytrainer.train(num_epochs=60)
-
     exit()
 
-    ### PHASE 2
+
+    # Load checkpoint as trained weights for CNN
+
+    ### PHASE 2 ###
 
     # new_dataset for a user
     # features = mytrainer.model.get_feature_vectors(new_dataset)
