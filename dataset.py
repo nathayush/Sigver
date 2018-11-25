@@ -10,23 +10,20 @@ class CNNData(Dataset):
     def __init__(self, path):
         x_data = []
         y_data = []
-        z_data = []
 
         for filename in os.listdir(path):
             x_data.append(self.process_img(os.path.join(path, filename)))
-            y_data.append(float(filename[0:3]))
             forg = 1 if filename[-5] == 'f' else 0
-            z_data.append(forg)
+            y_data.append(forg)
 
         self.x_data = torch.from_numpy(np.asarray(x_data)).type(torch.FloatTensor) # 220 x 150 tensors of images
-        self.y_data = torch.from_numpy(np.asarray(y_data)).type(torch.FloatTensor) # 1-d 2-tensors of target_user, forgery_bool
-        self.z_data = torch.from_numpy(np.asarray(z_data)).type(torch.FloatTensor)
+        self.y_data = torch.from_numpy(np.asarray(y_data)).type(torch.FloatTensor)
 
-        assert len(self.x_data)==len(self.y_data) and len(self.y_data)==len(self.z_data)
+        assert len(self.x_data)==len(self.y_data)
         self.len = len(self.x_data)
 
     def __getitem__(self, index):
-        return self.x_data[index], self.y_data[index], self.z_data[index]
+        return self.x_data[index], self.y_data[index]
 
     def __len__(self):
         return self.len
@@ -60,4 +57,16 @@ class CNNData(Dataset):
 
         return crop_img
 
-testData = CNNData("data/cnn/test")
+class SMRTData(Dataset):
+    def __init__(self, x, y):
+        self.x_data = torch.from_numpy(x).type(torch.FloatTensor)
+        self.y_data = torch.from_numpy(y).type(torch.FloatTensor)
+
+        assert len(self.x_data)==len(self.y_data)
+        self.len = len(self.x_data)
+
+    def __getitem__(self, index):
+        return self.x_data[index], self.y_data[index]
+
+    def __len__(self):
+        return self.len
